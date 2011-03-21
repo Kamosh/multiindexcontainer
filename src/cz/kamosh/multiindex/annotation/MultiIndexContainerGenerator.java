@@ -414,9 +414,8 @@ public class MultiIndexContainerGenerator extends AbstractProcessor {
 	private String getPackageAndImports(Element indexedClass,
 			Collection<Class> allUsedClasses) {
 		StringBuffer sb = new StringBuffer();
-
-		sb.append("package " + getPackageName(indexedClass) + ";");
-		sb.append(NEW_LINE);
+		
+		sb.append(getPackageName(indexedClass));		
 		sb.append("import cz.kamosh.multiindex.interf.Indexable;" + NEW_LINE);
 		// Now import all used classes
 		for (Class clz : allUsedClasses) {
@@ -427,7 +426,9 @@ public class MultiIndexContainerGenerator extends AbstractProcessor {
 	}
 
 	private String getPackageName(Element indexedClass) {
-		String className = indexedClass.toString();
-		return className.substring(0, className.lastIndexOf('.'));
+		String className = indexedClass.toString();		
+		// Treated also case of default package used
+		String packageName = className.substring(0, Math.max(className.lastIndexOf('.'),0));
+		return packageName.isEmpty() ? "" : ("package " + packageName + ";" + NEW_LINE); 
 	}
 }
