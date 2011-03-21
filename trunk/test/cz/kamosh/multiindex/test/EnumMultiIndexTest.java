@@ -61,63 +61,75 @@ public class EnumMultiIndexTest
 	@Override
 	protected void addIndexForBirthYear(
 			IMultiIndexContainerEnum<Person, Integer> mic) {
-		mic.addIndex(PersonTest_Indexes.BIRTH_YEAR);
+		mic.addIndex(Person_Indexes.BirthYear);
 	}
 
 	@Override
 	protected void addIndexForSurname(
 			IMultiIndexContainerEnum<Person, Integer> mic) {
-		mic.addIndex(PersonTest_Indexes.SURNAME);
+		mic.addIndex(Person_Indexes.Surname);
 		logger.info("Established index for birthYear");
 	}
 
 	@Override
 	protected void addIndexForSex(IMultiIndexContainerEnum<Person, Integer> mic) {
-		mic.addIndex(PersonTest_Indexes.SEX);
+		mic.addIndex(Person_Indexes.Man);
 		logger.info("Established index for sex");
+	}
+	
+	@Override
+	protected void addIndexForBMI(IMultiIndexContainerEnum<Person, Integer> mic) {
+		mic.addIndex(Person_Indexes.BmiIndex);
+		logger.info("Established index for BMI");
 	}
 
 	@Override
 	protected Collection<Person> findEqBirthYear(
 			IMultiIndexContainerEnum<Person, Integer> mic, int birthYear) {
-		return mic.find(mic.eq(PersonTest_Indexes.BIRTH_YEAR, birthYear));
+		return mic.find(mic.eq(Person_Indexes.BirthYear, birthYear));
 	}
 
 	@Override
 	protected Collection<Person> findInBirthYear(
 			IMultiIndexContainerEnum<Person, Integer> mic, Integer[] birthYears) {
-		return mic.find(mic.in(PersonTest_Indexes.BIRTH_YEAR, birthYears));
+		return mic.find(mic.in(Person_Indexes.BirthYear, birthYears));
 	}
 
 	@Override
 	protected ICriterion<Person, Integer, Indexable<Person>> createBetweenBirthYear(
 			IMultiIndexContainerEnum<Person, Integer> mic, int minBirthYear,
 			int maxBirthYear) {
-		return mic.between(PersonTest_Indexes.BIRTH_YEAR, minBirthYear,
+		return mic.between(Person_Indexes.BirthYear, minBirthYear,
 				maxBirthYear);
 	}
 
 	@Override
 	protected ICriterion<Person, Integer, Indexable<Person>> createEqBirthYear(
 			IMultiIndexContainerEnum<Person, Integer> mic, int birthYear) {
-		return mic.eq(PersonTest_Indexes.BIRTH_YEAR, birthYear);
+		return mic.eq(Person_Indexes.BirthYear, birthYear);
 	}
 
 	@Override
 	protected ICriterion<Person, Integer, Indexable<Person>> createEqSex(
 			IMultiIndexContainerEnum<Person, Integer> mic, boolean shouldBeMan) {
-		return mic.eq(PersonTest_Indexes.SEX, shouldBeMan);
+		return mic.eq(Person_Indexes.Man, shouldBeMan);
 	}
 
 	@Override
 	protected ICriterion<Person, Integer, Indexable<Person>> createIsNullSurname(
 			IMultiIndexContainerEnum<Person, Integer> mic) {
-		return mic.isNull(PersonTest_Indexes.SURNAME);
+		return mic.isNull(Person_Indexes.Surname);
 	}
 
 	@Override
 	protected ICriterion<Person, Integer, Indexable<Person>> createLTBirthYear(
 			IMultiIndexContainerEnum<Person, Integer> mic, int birthYear) {
-		return mic.lt(PersonTest_Indexes.BIRTH_YEAR, birthYear);
+		return mic.lt(Person_Indexes.BirthYear, birthYear);
+	}
+	
+	@Override
+	protected ICriterion<Person, Integer, Indexable<Person>> createLTBMI(
+			IMultiIndexContainerEnum<Person, Integer> mic, double bmi) {
+		return mic.lt(Person_Indexes.BmiIndex, bmi);
 	}
 }

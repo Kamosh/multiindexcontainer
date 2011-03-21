@@ -70,6 +70,12 @@ public class FieldMultiIndexTest
 			IMultiIndexContainerFields<Person, Integer> mic) {
 		mic.addIndex("man");
 	}
+	
+	@Override
+	protected void addIndexForBMI(
+			IMultiIndexContainerFields<Person, Integer> mic) {
+		mic.addIndex("bmiIndex");		
+	}
 
 	@Override
 	protected Collection<Person> findEqBirthYear(
@@ -115,4 +121,9 @@ public class FieldMultiIndexTest
 		return mic.lt("birthYear", birthYear);
 	}
 
+	@Override
+	protected ICriterion<Person, Integer, String> createLTBMI(
+			IMultiIndexContainerFields<Person, Integer> mic, double bmi) {
+		return mic.lt("bmiIndex", bmi);
+	}
 }
