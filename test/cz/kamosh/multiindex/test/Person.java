@@ -36,10 +36,11 @@ package cz.kamosh.multiindex.test;
 import java.util.Arrays;
 import java.util.Collection;
 
+import cz.kamosh.multiindex.annotation.MultiIndexed;
 import cz.kamosh.multiindex.interf.IMultiIndexed;
 
 /**
- * Data object used for testing MultiIndexContainer
+ * Data object used for testing MultiIndexContainer.
  * 
  */
 public class Person implements IMultiIndexed<Integer> {
@@ -48,23 +49,27 @@ public class Person implements IMultiIndexed<Integer> {
     private Integer birthYear;
     private String name;
     private String surname;
-    private boolean man;
-
-    public Person() {
-    }
-
-    Person(Integer birthYear, String name, String surname, boolean isMan) {
+    private boolean man; // true for man, false for woman    
+    private int height; // height in cm    
+    private double weigh; // weight in kg
+    
+    
+    public Person() {    	
+    }    
+    
+    Person(Integer birthYear, String name, String surname, boolean isMan, int height, double weigh) {
         this.id = counter++;
         this.birthYear = birthYear;
         this.name = name;
         this.surname = surname;
         this.man = isMan;
+        this.height = height;
+        this.weigh = weigh;
     }
 
     public Integer getMultiIndexPk() {
         return id;
     }
-
 
     static Person createPerson(int id) {
         return new Person(
@@ -77,7 +82,11 @@ public class Person implements IMultiIndexed<Integer> {
                 (id % 50 == 0 ? null : "surname_" + (id % 20))
                 ,
                 // Sex, man/woman
-                id % 2 == 0
+                id % 2 == 0,
+                // Height - from 200 to 140 cm
+                (200 - id%60),
+                // Weigh - from 40 to 100 kg
+                (40 + (id%60))
         );
     }
 
@@ -88,27 +97,51 @@ public class Person implements IMultiIndexed<Integer> {
         }
         return Arrays.asList(personTests);
     }
-
+    
+    @MultiIndexed
     public Integer getBirthYear() {
         return birthYear;
     }
-
+    
     public void setBirthYear(Integer birthYear) {
-    	this.birthYear = birthYear;
-    }
-        
+		this.birthYear = birthYear;
+	}
+
+            
+    public int getHeight() {
+		return height;
+	}
+
+
+	public double getWeigh() {
+		return weigh;
+	}
+
+	@MultiIndexed
     public String getName() {
         return name;
     }
-
+    
+    @MultiIndexed
     public String getSurname() {
         return surname;
     }
-
+    
+    @MultiIndexed
     public boolean isMan() {
-        return man;
+        return man;        
     }
-
+    
+    /**
+     * BMI index  
+     * @see http://en.wikipedia.org/wiki/Body_mass_index
+     * @return BMI index value
+     */
+    @MultiIndexed
+    public double getBmiIndex() {
+    	return getWeigh() / ((getHeight()/100d)*(getHeight()/100d));
+    }
+        
     public boolean equals(Object o) {
         if (this == o) return true;
         if (!(o instanceof Person)) return false;
@@ -129,6 +162,8 @@ public class Person implements IMultiIndexed<Integer> {
         return "id = " + id + "\t" +
                 "birthYear = " + birthYear + "\t" +
                 " name = " + name + "\t" +
-                " surname = " + surname;
+                " surname = " + surname + "\t" +
+                " man = " + man + "\t" +
+                " bmi =" + getBmiIndex();
     }
 }

@@ -58,6 +58,8 @@ public abstract class AbstractMultiIndexContainerTest<L, T extends IMultiIndexCo
 	protected abstract void addIndexForSurname(T mic);
 
 	protected abstract void addIndexForSex(T mic);
+	
+	protected abstract void addIndexForBMI(T mic);
 
 	protected abstract Collection<Person> findEqBirthYear(T mic, int birthYear);
 
@@ -77,6 +79,9 @@ public abstract class AbstractMultiIndexContainerTest<L, T extends IMultiIndexCo
 
 	protected abstract ICriterion<Person, Integer, L> createLTBirthYear(T mic,
 			int birthYear);
+	
+	protected abstract ICriterion<Person, Integer, L> createLTBMI(T mic, 
+			double bmi);
 
 	public AbstractMultiIndexContainerTest() {
 
@@ -293,7 +298,7 @@ public abstract class AbstractMultiIndexContainerTest<L, T extends IMultiIndexCo
 
 		// Lets create multi index container for Person class
 		T mic = createMultiIndexContainer(people);
-		logger.info("Created emtpy MultiIndexContainerEnum");
+		logger.info("Created empty MultiIndexContainerEnum");
 
 		int birthYear = 1977;
 		TimeElapser te = new TimeElapser();
@@ -797,5 +802,24 @@ public abstract class AbstractMultiIndexContainerTest<L, T extends IMultiIndexCo
 				"There should be found at least 1 people in MultiIndexContainerEnum, but only "
 						+ knownBirthYear.size() + " found",
 				knownBirthYear.size() > 0);
+	}
+	
+	/**
+	 * Testing for find underweight persons. They have BMI < 16
+	 */
+	@Test
+	public void testFindByBMIIndex() {
+		// Generate 10000 persons
+		Collection<Person> people = Person.generatePeople(10000);
+		
+		T mic = createMultiIndexContainer(people);
+		addIndexForBMI(mic);		
+		
+		Collection<Person> underweightPersons = mic.find(createLTBMI(mic, 16d));
+		logger.info("There are " + underweightPersons.size() + " underweight people ");
+		
+		Assert.assertTrue(
+				"There should be found at least 1 underweigt person found, but only " +underweightPersons.size() + " found",
+				underweightPersons.size() > 0);
 	}
 }
