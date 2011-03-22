@@ -165,7 +165,7 @@ public class Person implements IMultiIndexed<Integer>{
 }}}
 
 == Step 3 (performed automatically on background) - generating index constants ==
-See setting of annotation processor. TODO
+[http://code.google.com/p/multiindexcontainer/wiki/IndexConstantGenerator See setting of annotation processor]
 
 Due to annotation processing new class Person_Indexes.java has been automatically generated
 {{{
