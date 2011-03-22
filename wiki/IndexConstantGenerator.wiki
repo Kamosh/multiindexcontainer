@@ -1,4 +1,4 @@
-#summary One-sentence summary of this page.
+#summary Generator of index constants
 
 = MultiIndex index constant generator =
 Is based on Java's Annotation processor http://www.javabeat.net/articles/14-java-60-features-part-2-pluggable-annotation-proce-1.html
@@ -35,4 +35,28 @@ Usage of index constants should lead to type safe usage of MultiIndexContainer.
 NOTE: Even if MultiIndexContainer supports also identifying of indexed data by property name ("birthDate" for _getBirthDate_ indexed getter), usage of generated index constants should be the prefered way.
 
 = How to setup index constant generator within Eclipse =
-http://code.google.com/p/multiindexcontainer/source/browse/trunk/images/eclipse_annotation_processing_1.png
+
+http://multiindexcontainer.googlecode.com/svn/wiki/img/eclipse_annotation_processing_1.png
+
+http://multiindexcontainer.googlecode.com/svn/wiki/img/eclipse_annotation_processing_2.png
+
+=== Custom settings of annotation processor ===
+MultiIndex index constant generator supports optional settings of processor:
+  * classSuffix=VALUE_SUFFIX, where VALUE_SUFFIX is value which will be annexed to original file name. If not specified *"Indexes"* is used as default
+  * trimGet=[true|false], decides whether *is|get* prefixes in resulting index constants are trimmed or not
+
+For example this setting:
+
+http://multiindexcontainer.googlecode.com/svn/wiki/img/eclipse_annotation_processing_3.png
+
+is resulting into generated file
+{{{
+public enum Person_SpecialSuffix implements Indexable<Person> {
+
+	GetBirthYear {
+        public Object getIndexedValue(Person record) {
+              return record.getBirthYear();
+        }
+    },   
+}
+}}}
