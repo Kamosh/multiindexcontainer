@@ -60,3 +60,17 @@ public enum Person_SpecialSuffix implements Indexable<Person> {
     },   
 }
 }}}
+
+= MultiIndex index constant generator using _javac _=
+You will need _javac_ version 1.6, so check it on your command prompt:
+
+_>javac -version_
+
+You should get something like:
+
+_javac 1.6.0_14_
+
+
+Because annotation processor makes use of service loader (see http://java.sun.com/developer/technicalArticles/javase/extensible/index.html) the only syntax needed to generate index constants for your indexable getters (in this example in Person.java class) is:
+
+_>javac -classpath multiindexcontainer-1.1.1.jar Person.java_
