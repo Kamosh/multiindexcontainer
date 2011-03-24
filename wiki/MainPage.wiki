@@ -230,7 +230,7 @@ public static void main(String[] args) {
                         .generatePersons(10000);
         IMultiIndexContainerEnum<Person, Integer> mic = new MultiIndexContainerEnum<Person, Integer>(
                         generatedPersons);
-        // Add index for birth year
+        // Add index for birth year, man/woman and surname properties
         mic.addIndex(Person_Indexes.BirthYear, Person_Indexes.Man,
                         Person_Indexes.Surname);
         // Find women born in 1970 with surname 'Surname81'
