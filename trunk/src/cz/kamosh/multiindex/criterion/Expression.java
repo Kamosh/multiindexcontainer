@@ -115,5 +115,12 @@ public abstract class Expression<E extends IMultiIndexed<K>, K extends Object, L
 	public Collection<E> getRecordInstances(IMultiIndexContainer<E, K, L> container) {
 		return container.getRecordInstances(this);		
 	}
+
+	@Override
+	public String toString() {
+		return "Expression [index=" + index + ", operator=" + operator + "] "+ super.toString();
+	}
 	
+	
+
 }

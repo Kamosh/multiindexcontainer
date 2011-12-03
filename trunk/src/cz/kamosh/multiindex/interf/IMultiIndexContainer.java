@@ -275,4 +275,13 @@ public interface IMultiIndexContainer<E extends IMultiIndexed<K>, K extends Obje
 	 * @return OR operator for criterions
 	 */
 	public Disjunction<E, K, L> disjunction();
+	
+	/**
+	 * Gets how many values are indexed by specified criterion.
+	 * For expressions count of values is returned, for Junctions //TODO how this should behave for junctions?  
+	 *  
+	 * @param criterion For what criterion 
+	 * @return Count of distinct indexed vales
+	 */
+	public int getCountOfIndexedValues(ICriterion<E, K, L> criterion);
 }

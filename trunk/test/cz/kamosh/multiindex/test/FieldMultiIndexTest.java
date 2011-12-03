@@ -78,6 +78,13 @@ public class FieldMultiIndexTest
 	}
 
 	@Override
+	protected void addIndexForBirtYearAndSurname(
+			IMultiIndexContainerFields<Person, Integer> mic) {
+		mic.addIndex("birthYear", "surname");
+		
+	}
+	
+	@Override
 	protected Collection<Person> findEqBirthYear(
 			IMultiIndexContainerFields<Person, Integer> mic, int birthYear) {
 		return mic.find(mic.eq("birthYear", birthYear));

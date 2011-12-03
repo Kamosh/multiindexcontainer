@@ -29,36 +29,24 @@
  *  WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  *
  */
+package cz.kamosh.multiindex.interf;
 
-package cz.kamosh.multiindex.criterion;
 
-import java.util.Collection;
-
-import cz.kamosh.multiindex.interf.IMultiIndexContainer;
-import cz.kamosh.multiindex.interf.IMultiIndexed;
 
 /**
- * General criterion used to specify conditions how to find records in container
- * <p/>
- * Parameters used to preserve link proper criterion to proper container
- * 
- * @param <E>
- *            Record type in container
- * @param <K>
- *            Key type of record
- * @param <L>
- *            Type of index used for container. Now there is possibility to use
- *            <code>String</code> or <code>Indexable</code>
+ * Interface to express template for all indexes that might be used in {@link cz.kamosh.multiindex.impl.MultiIndexContainerEnum}
+ * @param <T>Type of record to be indexed
  */
-public interface ICriterion<E extends IMultiIndexed<K>, K extends Object, L> {
+public interface Indexable<T extends IMultiIndexed> {
 
+	
 	/**
-	 * Method to find records resulting from all <code>lookupRules</code> in
-	 * parameter
-	 * 
-	 * @param What
-	 *            container to use get values?
+	 * Returns indexed value of specified record.
+	 * Returned data should implement interface {@link Comparable} as they are 
+	 * put into {@link java.util.NavigableMap} 
+	 * @param record What record to use to get indexed data?
+	 * @return Value of indexed data
 	 */
-	public Collection<E> getRecordInstances(
-			IMultiIndexContainer<E, K, L> container);
+    Object getIndexedValue(T record);    
+      
 }

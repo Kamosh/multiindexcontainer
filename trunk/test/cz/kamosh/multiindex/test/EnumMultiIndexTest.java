@@ -44,7 +44,7 @@ public class EnumMultiIndexTest
 		extends
 		AbstractMultiIndexContainerTest<Indexable<Person>, IMultiIndexContainerEnum<Person, Integer>> {
 
-	private static final Logger logger = Logger
+	private static final Logger LOGGER = Logger
 			.getLogger(EnumMultiIndexTest.class.getName());
 
 	@Override
@@ -68,19 +68,26 @@ public class EnumMultiIndexTest
 	protected void addIndexForSurname(
 			IMultiIndexContainerEnum<Person, Integer> mic) {
 		mic.addIndex(Person_Indexes.Surname);
-		logger.info("Established index for birthYear");
+		LOGGER.info("Established index for birthYear");
 	}
 
 	@Override
 	protected void addIndexForSex(IMultiIndexContainerEnum<Person, Integer> mic) {
 		mic.addIndex(Person_Indexes.Man);
-		logger.info("Established index for sex");
+		LOGGER.info("Established index for sex");
 	}
 	
 	@Override
 	protected void addIndexForBMI(IMultiIndexContainerEnum<Person, Integer> mic) {
 		mic.addIndex(Person_Indexes.BmiIndex);
-		logger.info("Established index for BMI");
+		LOGGER.info("Established index for BMI");
+	}
+	
+	@Override
+	protected void addIndexForBirtYearAndSurname(IMultiIndexContainerEnum<Person, Integer> mic) {
+		mic.addIndex(Person_Indexes.BirthYear, Person_Indexes.Surname);
+		LOGGER.info("Established indexed for birth year and surname");
+		
 	}
 
 	@Override
@@ -132,4 +139,5 @@ public class EnumMultiIndexTest
 			IMultiIndexContainerEnum<Person, Integer> mic, double bmi) {
 		return mic.lt(Person_Indexes.BmiIndex, bmi);
 	}
+		
 }

@@ -32,20 +32,24 @@
 
 package cz.kamosh.multiindex.test;
 
+import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.logging.Logger;
 
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Test;
 
 import cz.kamosh.multiindex.criterion.ICriterion;
 import cz.kamosh.multiindex.impl.Junction;
 import cz.kamosh.multiindex.impl.Junction.Conjunction;
+import cz.kamosh.multiindex.impl.MultiIndexSetting;
 import cz.kamosh.multiindex.interf.IMultiIndexContainer;
 
 public abstract class AbstractMultiIndexContainerTest<L, T extends IMultiIndexContainer<Person, Integer, L>> {
-	private static final Logger logger = Logger
+	private static final Logger LOGGER = Logger
 			.getLogger(AbstractMultiIndexContainerTest.class.getName());
 
 	// All methods needed for all tests to be implemented
@@ -60,6 +64,8 @@ public abstract class AbstractMultiIndexContainerTest<L, T extends IMultiIndexCo
 	protected abstract void addIndexForSex(T mic);
 	
 	protected abstract void addIndexForBMI(T mic);
+	
+	protected abstract void addIndexForBirtYearAndSurname(T mic);
 
 	protected abstract Collection<Person> findEqBirthYear(T mic, int birthYear);
 
@@ -87,9 +93,61 @@ public abstract class AbstractMultiIndexContainerTest<L, T extends IMultiIndexCo
 
 	}
 
+	
+	@After
+	public void clearMemory() {
+		System.gc();
+	}
+	
+	@Test
+	public void testCreateMultiIndexContainerNonParallel() throws IOException {	
+		// 3276 ms in average for 50 loops (with gc)
+		// 6480 in 10 loops (with gc)
+		LOGGER.info("testCreateMultiIndexContainerNonParallel");
+		innerCreateMultiIndexContainer(false);
+	}
+	
+	@Test
+	public void testCreateMultiIndexContainerParallel() {
+		// 1811 ms in average for 50 loops (with gc)
+		// 5098 in 10 loops (without gc)
+		LOGGER.info("testCreateMultiIndexContainerNonParallel");
+		innerCreateMultiIndexContainer(true);
+	}
+	
+	/**
+	 * Test to decide whether parallel indexing increases performance 
+	 */	
+	private void innerCreateMultiIndexContainer(boolean useParallel) {
+		final int LOOPS = 1;
+		// Number of create people
+		int count = 1000000; //1M
+		Collection<Person> people = Person.generatePeople(count);
+		
+		long allTimes = 0;
+		long[] distinctTimes = new long[LOOPS];
+		MultiIndexSetting.getInstance().setUseParalellization(useParallel);
+		for (int i = 0; i < LOOPS; i++) {					
+			TimeElapser te = new TimeElapser();
+			T mic = createMultiIndexContainer();
+			addIndexForBirthYear(mic);
+			addIndexForBMI(mic);
+			addIndexForSurname(mic);
+			addIndexForSex(mic);
+			mic.addAll(people);
+			allTimes += te.end();
+			distinctTimes[i] = te.end();
+			LOGGER.info("Elapsed time to add " + count + " people is "
+					+ te.end() + " ms");
+		}
+		LOGGER.info("All times: " + Arrays.toString(distinctTimes));
+		LOGGER.info("Average time to add " + count + " people is " + allTimes/LOOPS);
+	}
+
+	
 	@Test
 	public void testConstructor() {
-		logger.info("testConstructor");
+		LOGGER.info("testConstructor");
 		T mic = createMultiIndexContainer();
 		Assert.assertTrue("MultiIndexContainer constructor has not passed",
 				true);
@@ -97,7 +155,7 @@ public abstract class AbstractMultiIndexContainerTest<L, T extends IMultiIndexCo
 
 	@Test
 	public void testConstructorWithValues10() {
-		logger.info("testConstructorWithValues");
+		LOGGER.info("testConstructorWithValues");
 		// Number of created people
 		int count = 10;
 		Collection<Person> people = Person.generatePeople(count);
@@ -117,7 +175,7 @@ public abstract class AbstractMultiIndexContainerTest<L, T extends IMultiIndexCo
 	 */
 	@Test
 	public void testBulkData1M() {
-		logger.info("testBulkData");
+		LOGGER.info("testBulkData1M");
 		// Number of created people
 		int count = 1000000; // 1 M
 		Collection<Person> people = Person.generatePeople(count);
@@ -125,19 +183,19 @@ public abstract class AbstractMultiIndexContainerTest<L, T extends IMultiIndexCo
 		TimeElapser te = new TimeElapser();
 
 		T mic = createMultiIndexContainer(people);
-		logger.info("Elapsed time to add " + count + " people is " + te.end()
+		LOGGER.info("Elapsed time to add " + count + " people is " + te.end()
 				+ " ms");
 		Assert.assertTrue("There should be " + count
 				+ " people in MultiIndexContainerEnum, but only " + mic.size()
 				+ " to be present", count == mic.size());
-	}
-
+	} 
+	
 	/**
 	 * Test for creating index for <code>birthYear</code> attribute
 	 */
 	@Test
 	public void testIndexBirthYear100K() {
-		logger.info("testIndexBirthYear");
+		LOGGER.info("testIndexBirthYear");
 		// Number of created people
 		int count = 100000;
 
@@ -147,13 +205,13 @@ public abstract class AbstractMultiIndexContainerTest<L, T extends IMultiIndexCo
 		// attribute
 		TimeElapser te = new TimeElapser();
 		T mic = createMultiIndexContainer(people);
-		logger.info("Elapsed time to add " + count + " people is " + te.end()
+		LOGGER.info("Elapsed time to add " + count + " people is " + te.end()
 				+ " ms");
 
 		// and create index for "birthYear"
 		te.start();
 		addIndexForBirthYear(mic);
-		logger.info("Elapsed time to create index birthYear for " + count
+		LOGGER.info("Elapsed time to create index birthYear for " + count
 				+ " people is " + te.end() + " ms");
 
 		Assert.assertTrue("There should be " + count
@@ -166,7 +224,7 @@ public abstract class AbstractMultiIndexContainerTest<L, T extends IMultiIndexCo
 	 */
 	@Test
 	public void testIndexSurname100K() {
-		logger.info("testIndexSurname");
+		LOGGER.info("testIndexSurname");
 		// Number of created people
 		int count = 100000;
 
@@ -176,14 +234,14 @@ public abstract class AbstractMultiIndexContainerTest<L, T extends IMultiIndexCo
 		// attribute
 		TimeElapser te = new TimeElapser();
 		T mic = createMultiIndexContainer(people);
-		logger.info("Elapsed time to add " + count + " people is " + te.end()
+		LOGGER.info("Elapsed time to add " + count + " people is " + te.end()
 				+ " ms");
 
 		// and create index for "surname"
 		te.start();
 		String attributeName = "surname";
 		addIndexForSurname(mic);
-		logger.info("Elapsed time to create index \"" + attributeName
+		LOGGER.info("Elapsed time to create index \"" + attributeName
 				+ "\" for " + count + " people is " + te.end() + " ms");
 
 		Assert.assertTrue("There should be " + count
@@ -196,27 +254,27 @@ public abstract class AbstractMultiIndexContainerTest<L, T extends IMultiIndexCo
 	 */
 	@Test
 	public void testIndexBeforeData100K() {
-		logger.info("testAheadIndex");
+		LOGGER.info("testAheadIndex");
 		// Number of created people
 		int count = 100000;
 
 		// Lets create multi index container for Person class
 		T mic = createMultiIndexContainer();
-		logger.info("Created emtpy MultiIndexContainerEnum");
+		LOGGER.info("Created emtpy MultiIndexContainerEnum");
 
 		// Create index for "birthYear"
 		addIndexForBirthYear(mic);
-		logger.info("Established index for birthYear");
+		LOGGER.info("Established index for birthYear");
 
 		// Create index for "surname"
 		addIndexForSurname(mic);
-		logger.info("Established index for surname");
+		LOGGER.info("Established index for surname");
 
 		Collection<Person> people = Person.generatePeople(count);
 		TimeElapser te = new TimeElapser();
 		// Adding all people
 		mic.addAll(people);
-		logger.info("Elapsed time to add " + count + " people is " + te.end()
+		LOGGER.info("Elapsed time to add " + count + " people is " + te.end()
 				+ " ms");
 
 		Assert.assertTrue("There should be " + count
@@ -229,7 +287,7 @@ public abstract class AbstractMultiIndexContainerTest<L, T extends IMultiIndexCo
 	 */
 	@Test
 	public void testFindByIndex100K() {
-		logger.info("testFindByIndex");
+		LOGGER.info("testFindByIndex");
 		// Number of created people
 		int count = 100000;
 
@@ -237,15 +295,15 @@ public abstract class AbstractMultiIndexContainerTest<L, T extends IMultiIndexCo
 
 		// Lets create multi index container for Person class
 		T mic = createMultiIndexContainer(people);
-		logger.info("Created filled MultiIndexContainer");
+		LOGGER.info("Created filled MultiIndexContainer");
 
 		// Create index for "birthYear"
 		addIndexForBirthYear(mic);
-		logger.info("Established index for birthYear");
+		LOGGER.info("Established index for birthYear");
 
 		int birthYear = 1977;
 		Collection<Person> peopleBorn1977 = findEqBirthYear(mic, birthYear);
-		logger.info("There are " + peopleBorn1977.size() + " people born in "
+		LOGGER.info("There are " + peopleBorn1977.size() + " people born in "
 				+ birthYear);
 
 		Assert.assertTrue("There should be at least one person born in "
@@ -257,7 +315,7 @@ public abstract class AbstractMultiIndexContainerTest<L, T extends IMultiIndexCo
 	 */
 	@Test
 	public void testFindByIndexWithMultipleValues100K() {
-		logger.info("testFindByIndex");
+		LOGGER.info("testFindByIndex");
 		// Number of created people
 		int count = 100000;
 
@@ -265,7 +323,7 @@ public abstract class AbstractMultiIndexContainerTest<L, T extends IMultiIndexCo
 
 		// Lets create multiindex container for Person class
 		T mic = createMultiIndexContainer(people);
-		logger.info("Created emtpy MultiIndexContainerEnum");
+		LOGGER.info("Created emtpy MultiIndexContainerEnum");
 
 		// Create index for "birthYear"
 		addIndexForBirthYear(mic);
@@ -276,7 +334,7 @@ public abstract class AbstractMultiIndexContainerTest<L, T extends IMultiIndexCo
 		Integer[] birthYears = { birthYear1977, birthYear1978, birthYear1979 };
 		Collection<Person> peopleBorn1977_9 = findInBirthYear(mic, birthYears);
 
-		logger.info("There are " + peopleBorn1977_9.size() + " people born in "
+		LOGGER.info("There are " + peopleBorn1977_9.size() + " people born in "
 				+ birthYear1977 + "," + birthYear1978 + "," + birthYear1979);
 
 		Assert.assertTrue("There should be at least one person born in "
@@ -290,7 +348,7 @@ public abstract class AbstractMultiIndexContainerTest<L, T extends IMultiIndexCo
 	 */
 	@Test
 	public void testFindByWithAndWithoutIndex100K() {
-		logger.info("testFindByWithAndWithoutIndex");
+		LOGGER.info("testFindByWithAndWithoutIndex");
 		// Number of created people
 		int count = 1000000;
 
@@ -298,7 +356,7 @@ public abstract class AbstractMultiIndexContainerTest<L, T extends IMultiIndexCo
 
 		// Lets create multi index container for Person class
 		T mic = createMultiIndexContainer(people);
-		logger.info("Created empty MultiIndexContainerEnum");
+		LOGGER.info("Created empty MultiIndexContainerEnum");
 
 		int birthYear = 1977;
 		TimeElapser te = new TimeElapser();
@@ -308,18 +366,18 @@ public abstract class AbstractMultiIndexContainerTest<L, T extends IMultiIndexCo
 				countFound++;
 			}
 		}
-		logger.info("There are " + countFound + " people born in " + birthYear);
-		logger.info("Elapsed time to find people is " + te.end() + " ms");
+		LOGGER.info("There are " + countFound + " people born in " + birthYear);
+		LOGGER.info("Elapsed time to find people is " + te.end() + " ms");
 
 		// Create index for "birthYear"
 		addIndexForBirthYear(mic);
-		logger.info("Established index for birthYear");
+		LOGGER.info("Established index for birthYear");
 
 		te.start();
 		Collection<Person> peopleBorn1977 = findEqBirthYear(mic, birthYear);
-		logger.info("There are " + peopleBorn1977.size() + " people born in "
+		LOGGER.info("There are " + peopleBorn1977.size() + " people born in "
 				+ birthYear);
-		logger.info("Elapsed time to find people is " + te.end() + " ms");
+		LOGGER.info("Elapsed time to find people is " + te.end() + " ms");
 
 		Assert.assertTrue("There should be at least one person born in "
 				+ birthYear, peopleBorn1977.size() > 0);
@@ -331,7 +389,7 @@ public abstract class AbstractMultiIndexContainerTest<L, T extends IMultiIndexCo
 	 */
 	@Test
 	public void testIndexBirthYearBetween100K() {
-		logger.info("testIndexBirthYearBetween");
+		LOGGER.info("testIndexBirthYearBetween");
 		// Number of created people
 		int count = 1000000;
 
@@ -347,7 +405,7 @@ public abstract class AbstractMultiIndexContainerTest<L, T extends IMultiIndexCo
 		// and create index for "birthYear"
 		te.start();
 		addIndexForBirthYear(mic);
-		logger.info("Elapsed time to create index for birthYear for " + count
+		LOGGER.info("Elapsed time to create index for birthYear for " + count
 				+ " people is " + te.end() + " ms");
 
 		// Try to find records with people whose birthYear is between
@@ -363,9 +421,9 @@ public abstract class AbstractMultiIndexContainerTest<L, T extends IMultiIndexCo
 
 		Collection<Person> personTests = mic.find(conjunction);
 
-		logger.info("Found " + personTests.size() + " people for birthYear ["
+		LOGGER.info("Found " + personTests.size() + " people for birthYear ["
 				+ minBirthYear + ", " + maxBirthYear + "]");
-		logger.info("Elapsed time to find people " + te.end() + " ms");
+		LOGGER.info("Elapsed time to find people " + te.end() + " ms");
 
 		Assert.assertTrue("There should be found at least one person, but "
 				+ personTests.size() + " returned", personTests.size() > 0);
@@ -377,7 +435,7 @@ public abstract class AbstractMultiIndexContainerTest<L, T extends IMultiIndexCo
 	 */
 	@Test
 	public void testIndexBirthYearBetweenWithoutIndex1M() {
-		logger.info("testIndexBirthYearBetweenWithoutIndex");
+		LOGGER.info("testIndexBirthYearBetweenWithoutIndex");
 		// Number of created people
 		int count = 1000000;
 
@@ -388,7 +446,7 @@ public abstract class AbstractMultiIndexContainerTest<L, T extends IMultiIndexCo
 		TimeElapser te = new TimeElapser();
 		T mic = createMultiIndexContainer(people);
 
-		logger.info("Elapsed time to add " + count + " people is " + te.end()
+		LOGGER.info("Elapsed time to add " + count + " people is " + te.end()
 				+ " ms");
 
 		// Try to find records with people whose birthYear is greater than ...
@@ -402,9 +460,9 @@ public abstract class AbstractMultiIndexContainerTest<L, T extends IMultiIndexCo
 				personTests.add(p);
 			}
 		}
-		logger.info("Found " + personTests.size() + " people for birthYear ["
+		LOGGER.info("Found " + personTests.size() + " people for birthYear ["
 				+ minBirthYear + ", " + maxBirthYear + "]");
-		logger.info("Elapsed time to find people " + te.end() + " ms");
+		LOGGER.info("Elapsed time to find people " + te.end() + " ms");
 
 		Assert.assertTrue("There should be found at least one person, but "
 				+ personTests.size() + " returned", personTests.size() > 0);
@@ -416,7 +474,7 @@ public abstract class AbstractMultiIndexContainerTest<L, T extends IMultiIndexCo
 	 */
 	@Test
 	public void testIndexBirthYearBetween1_1M() {
-		logger.info("testIndexBirthYearBetween1");
+		LOGGER.info("testIndexBirthYearBetween1");
 		// Number of created people
 		int count = 1000000;
 
@@ -426,14 +484,14 @@ public abstract class AbstractMultiIndexContainerTest<L, T extends IMultiIndexCo
 		// attribute
 		TimeElapser te = new TimeElapser();
 		T mic = createMultiIndexContainer(people);
-		logger.info("Elapsed time to add " + count + " people is " + te.end()
+		LOGGER.info("Elapsed time to add " + count + " people is " + te.end()
 				+ " ms");
 
 		// and create index for "birthYear"
 		te.start();
 		addIndexForBirthYear(mic);
 
-		logger.info("Elapsed time to create index for birthDate for " + count
+		LOGGER.info("Elapsed time to create index for birthDate for " + count
 				+ " people is " + te.end() + " ms");
 
 		// Try to find records with people whose birthYear is between
@@ -445,9 +503,9 @@ public abstract class AbstractMultiIndexContainerTest<L, T extends IMultiIndexCo
 		for (int year = minBirthYear; year < maxBirthYear; year++) {
 			personTests.addAll(findEqBirthYear(mic, year));
 		}
-		logger.info("Found " + personTests.size() + " people for birthYear ["
+		LOGGER.info("Found " + personTests.size() + " people for birthYear ["
 				+ minBirthYear + "-" + maxBirthYear + "]");
-		logger.info("Elapsed time to find people " + te.end() + " ms");
+		LOGGER.info("Elapsed time to find people " + te.end() + " ms");
 
 		Assert.assertTrue("There should be found at least one person, but "
 				+ personTests.size() + " returned", personTests.size() > 0);
@@ -458,7 +516,7 @@ public abstract class AbstractMultiIndexContainerTest<L, T extends IMultiIndexCo
 	 */
 	@Test
 	public void testIndexBirthYearAndSex1M() {
-		logger.info("testIndexBirthYearAndSex");
+		LOGGER.info("testIndexBirthYearAndSex");
 		// Number of created people
 		int count = 1000000;
 
@@ -474,13 +532,13 @@ public abstract class AbstractMultiIndexContainerTest<L, T extends IMultiIndexCo
 		// and create index for "birthYear"
 		te.start();
 		addIndexForBirthYear(mic);
-		logger.info("Elapsed time to create index for birthYear for " + count
+		LOGGER.info("Elapsed time to create index for birthYear for " + count
 				+ " people is " + te.end() + " ms");
 
 		// and create index for sex of person
 		te.start();
 		addIndexForSex(mic);
-		logger.info("Elapsed time to create index for sex  for " + count
+		LOGGER.info("Elapsed time to create index for sex  for " + count
 				+ " people is " + te.end() + " ms");
 
 		// Try to find records with people whose birthYear is between
@@ -496,10 +554,10 @@ public abstract class AbstractMultiIndexContainerTest<L, T extends IMultiIndexCo
 
 		Collection<Person> personTests = mic.find(lookupRules);
 
-		logger.info("Found " + personTests.size() + " people for birthYear ["
+		LOGGER.info("Found " + personTests.size() + " people for birthYear ["
 				+ minBirthYear + ", " + maxBirthYear + "] and" + " isMan="
 				+ shouldBeMan);
-		logger.info("Elapsed time to find people " + te.end() + " ms");
+		LOGGER.info("Elapsed time to find people " + te.end() + " ms");
 
 		Assert.assertTrue("There should be found at least one person, but "
 				+ personTests.size() + " returned", personTests.size() > 0);
@@ -510,7 +568,7 @@ public abstract class AbstractMultiIndexContainerTest<L, T extends IMultiIndexCo
 	 */
 	@Test
 	public void testIndexBirthYearAndSexWithoutIndex_1M() {
-		logger.info("testIndexBirthYearAndSexWithoutIndex");
+		LOGGER.info("testIndexBirthYearAndSexWithoutIndex");
 		// Number of created people
 		int count = 1000000;
 
@@ -520,7 +578,7 @@ public abstract class AbstractMultiIndexContainerTest<L, T extends IMultiIndexCo
 		// attribute
 		TimeElapser te = new TimeElapser();
 		T mic = createMultiIndexContainer(people);
-		logger.info("Elapsed time to add " + count + " people is " + te.end()
+		LOGGER.info("Elapsed time to add " + count + " people is " + te.end()
 				+ " ms");
 
 		// Try to find records with people whose birthYear is between
@@ -538,10 +596,10 @@ public abstract class AbstractMultiIndexContainerTest<L, T extends IMultiIndexCo
 				personTests.add(p);
 			}
 		}
-		logger.info("Found " + personTests.size() + " people for birthYear ["
+		LOGGER.info("Found " + personTests.size() + " people for birthYear ["
 				+ minBirthYear + ", " + maxBirthYear + "] and" + " isMan="
 				+ shouldBeMan);
-		logger.info("Elapsed time to find people " + te.end() + " ms");
+		LOGGER.info("Elapsed time to find people " + te.end() + " ms");
 
 		Assert.assertTrue("There should be found at least one person, but "
 				+ personTests.size() + " returned", personTests.size() > 0);
@@ -549,7 +607,7 @@ public abstract class AbstractMultiIndexContainerTest<L, T extends IMultiIndexCo
 
 	@Test
 	public void testConcurrency() {
-		logger.info("testConcurrency");
+		LOGGER.info("testConcurrency");
 		// Number of created people
 		int count = 1000;
 
@@ -559,19 +617,19 @@ public abstract class AbstractMultiIndexContainerTest<L, T extends IMultiIndexCo
 		// attribute
 		TimeElapser te = new TimeElapser();
 		final T mic = createMultiIndexContainer(people);
-		logger.info("Elapsed time to add " + count + " people is " + te.end()
+		LOGGER.info("Elapsed time to add " + count + " people is " + te.end()
 				+ " ms");
 
 		// and create index for "birthYear"
 		te.start();
 		addIndexForBirthYear(mic);
-		logger.info("Elapsed time to create index for birthYear  for " + count
+		LOGGER.info("Elapsed time to create index for birthYear  for " + count
 				+ " people is " + te.end() + " ms");
 
 		// and create index for "man"
 		te.start();
 		addIndexForSex(mic);
-		logger.info("Elapsed time to create index for sex for " + count
+		LOGGER.info("Elapsed time to create index for sex for " + count
 				+ " people is " + te.end() + " ms");
 
 		// Try to find records with people whose birthYear is between
@@ -596,21 +654,21 @@ public abstract class AbstractMultiIndexContainerTest<L, T extends IMultiIndexCo
 			if (y % 2 == 0) {
 				threads[y] = new Thread(new Runnable() {
 					public void run() {
-						logger.info("Thread " + y + " (writer) started");
+						LOGGER.info("Thread " + y + " (writer) started");
 						mic.addAll(Person.generatePeople(howManyPeopleToAdd));
-						logger.info("Thread " + y + " (writer) "
+						LOGGER.info("Thread " + y + " (writer) "
 								+ howManyPeopleToAdd + " people added");
-						logger.info("Thread " + y + " (writer) ended");
+						LOGGER.info("Thread " + y + " (writer) ended");
 					}
 				}, "Writer-" + y);
 			} else {
 				threads[y] = new Thread(new Runnable() {
 					public void run() {
-						logger.info("Thread " + y + " (reader) started");
-						logger.info("Thread " + y + " (reader) ... "
+						LOGGER.info("Thread " + y + " (reader) started");
+						LOGGER.info("Thread " + y + " (reader) ... "
 								+ mic.find(lookupRules).size()
 								+ " people found");
-						logger.info("Thread " + y + " (reader) ended");
+						LOGGER.info("Thread " + y + " (reader) ended");
 					}
 				}, "Reader-" + y);
 			}
@@ -619,7 +677,7 @@ public abstract class AbstractMultiIndexContainerTest<L, T extends IMultiIndexCo
 		for (int i = 0; i < howManyThreads; i++) {
 			threads[i].start();
 		}
-		logger.info("Threads finished");
+		LOGGER.info("Threads finished");
 
 		try {
 			Thread.sleep(15 * 1000L);
@@ -635,7 +693,7 @@ public abstract class AbstractMultiIndexContainerTest<L, T extends IMultiIndexCo
 	 */
 	@Test
 	public void testIndexBirthYearPureIndexes100K() {
-		logger.info("testIndexBirthYearPureIndexes");
+		LOGGER.info("testIndexBirthYearPureIndexes");
 		// Number of created people
 		int count = 100000;
 
@@ -646,19 +704,19 @@ public abstract class AbstractMultiIndexContainerTest<L, T extends IMultiIndexCo
 		TimeElapser te = new TimeElapser();
 		T mic = createMultiIndexContainer(people);
 
-		logger.info("Elapsed time to add " + count + " people is " + te.end()
+		LOGGER.info("Elapsed time to add " + count + " people is " + te.end()
 				+ " ms");
 
 		// and create index for "birthYear"
 		te.start();
 		addIndexForBirthYear(mic);
-		logger.info("Elapsed time to create index for birthYear  for " + count
+		LOGGER.info("Elapsed time to create index for birthYear  for " + count
 				+ " people is " + te.end() + " ms");
 
 		int birthYear = 1977;
 		Collection<Person> peopleBorn1977 = mic.find(createEqBirthYear(mic,
 				birthYear));
-		logger.info("There are " + peopleBorn1977.size() + " people born in "
+		LOGGER.info("There are " + peopleBorn1977.size() + " people born in "
 				+ birthYear);
 
 		Assert.assertTrue("There should be " + count
@@ -671,7 +729,7 @@ public abstract class AbstractMultiIndexContainerTest<L, T extends IMultiIndexCo
 	 */
 	@Test
 	public void testIndexWithNullValue100() {
-		logger.info("testIndexWithNullValue");
+		LOGGER.info("testIndexWithNullValue");
 		// Number of created people
 		int count = 100;
 
@@ -682,7 +740,7 @@ public abstract class AbstractMultiIndexContainerTest<L, T extends IMultiIndexCo
 		TimeElapser te = new TimeElapser();
 		T mic = createMultiIndexContainer(people);
 
-		logger.info("Elapsed time to add " + count + " people is " + te.end()
+		LOGGER.info("Elapsed time to add " + count + " people is " + te.end()
 				+ " ms");
 
 		// and create index for "birthYear"
@@ -690,7 +748,7 @@ public abstract class AbstractMultiIndexContainerTest<L, T extends IMultiIndexCo
 		addIndexForBirthYear(mic);
 		addIndexForSurname(mic);
 		te.end();
-		logger.info("Elapsed time to create indexes for birthYear and surname for "
+		LOGGER.info("Elapsed time to create indexes for birthYear and surname for "
 				+ count + " people is " + te.end() + " ms");
 
 		int birthYear = 1950;
@@ -700,7 +758,7 @@ public abstract class AbstractMultiIndexContainerTest<L, T extends IMultiIndexCo
 				.add(createIsNullSurname(mic));
 
 		Collection<Person> born1950 = mic.find(lookupRules);
-		logger.info("There are " + born1950.size() + " people born in "
+		LOGGER.info("There are " + born1950.size() + " people born in "
 				+ birthYear + " and named null");
 
 		Assert.assertTrue(
@@ -710,12 +768,13 @@ public abstract class AbstractMultiIndexContainerTest<L, T extends IMultiIndexCo
 
 	/**
 	 * Test for finding records with null indexed value
+	 * @throws IOException 
 	 */
 	@Test
-	public void testIndexWithNullValueForBirthDate_100() {
-		logger.info("testIndexWithNullValueForBirthDate");
+	public void testIndexWithNullValueForBirthDate_100() throws IOException {
+		LOGGER.info("testIndexWithNullValueForBirthDate");
 		// Number of created people
-		int count = 100;
+		int count = 100000;
 
 		Collection<Person> people = Person.generatePeople(count);
 		// Lets half of people have birthYear unknown
@@ -729,14 +788,13 @@ public abstract class AbstractMultiIndexContainerTest<L, T extends IMultiIndexCo
 		// attribute
 		TimeElapser te = new TimeElapser();
 		T mic = createMultiIndexContainer(people);
-		logger.info("Elapsed time to add " + count + " people is " + te.end()
+		LOGGER.info("Elapsed time to add " + count + " people is " + te.end()
 				+ " ms");
 
 		// and create index for "birthYear"
 		te.start();
-		addIndexForBirthYear(mic);
-		addIndexForSurname(mic);
-		logger.info("Elapsed time to create index ["
+		addIndexForBirtYearAndSurname(mic);
+		LOGGER.info("Elapsed time to create index ["
 				+ PersonTest_Indexes.BIRTH_YEAR + ", "
 				+ PersonTest_Indexes.SURNAME + "]  for " + count
 				+ " people is " + te.end() + " ms");
@@ -748,7 +806,7 @@ public abstract class AbstractMultiIndexContainerTest<L, T extends IMultiIndexCo
 				.add(createIsNullSurname(mic));
 
 		Collection<Person> bornBefore1980 = mic.find(lookupRules);
-		logger.info("There are " + bornBefore1980.size()
+		LOGGER.info("There are " + bornBefore1980.size()
 				+ " people born before " + birthYear + " with surname null");
 
 		Assert.assertTrue(
@@ -762,7 +820,7 @@ public abstract class AbstractMultiIndexContainerTest<L, T extends IMultiIndexCo
 	 */
 	@Test
 	public void testIndexNotNull() {
-		logger.info("testIndexNotNull");
+		LOGGER.info("testIndexNotNull");
 		// Number of created people
 		int count = 100;
 
@@ -778,14 +836,14 @@ public abstract class AbstractMultiIndexContainerTest<L, T extends IMultiIndexCo
 		// attribute
 		TimeElapser te = new TimeElapser();
 		T mic = createMultiIndexContainer(people);
-		logger.info("Elapsed time to add " + count + " people is " + te.end()
+		LOGGER.info("Elapsed time to add " + count + " people is " + te.end()
 				+ " ms");
 
 		// and create index for "birthYear"
 		te.start();
 		addIndexForBirthYear(mic);
 		addIndexForSurname(mic);
-		logger.info("Elapsed time to create indexes birthYear and surname  for "
+		LOGGER.info("Elapsed time to create indexes birthYear and surname  for "
 				+ count + " people is " + te.end() + " ms");
 
 		int birthYear = 1980;
@@ -795,7 +853,7 @@ public abstract class AbstractMultiIndexContainerTest<L, T extends IMultiIndexCo
 				.add(createIsNullSurname(mic));
 
 		Collection<Person> knownBirthYear = mic.find(lookupRules);
-		logger.info("There are " + knownBirthYear.size()
+		LOGGER.info("There are " + knownBirthYear.size()
 				+ " people with knowh birth year ");
 
 		Assert.assertTrue(
@@ -816,7 +874,7 @@ public abstract class AbstractMultiIndexContainerTest<L, T extends IMultiIndexCo
 		addIndexForBMI(mic);		
 		
 		Collection<Person> underweightPersons = mic.find(createLTBMI(mic, 16d));
-		logger.info("There are " + underweightPersons.size() + " underweight people ");
+		LOGGER.info("There are " + underweightPersons.size() + " underweight people ");
 		
 		Assert.assertTrue(
 				"There should be found at least 1 underweigt person found, but only " +underweightPersons.size() + " found",

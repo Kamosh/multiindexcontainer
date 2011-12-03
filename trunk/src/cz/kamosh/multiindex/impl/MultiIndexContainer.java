@@ -33,6 +33,7 @@
 package cz.kamosh.multiindex.impl;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -42,6 +43,7 @@ import java.util.Map;
 import java.util.NavigableMap;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.Map.Entry;
 import java.util.logging.Logger;
 
 import cz.kamosh.multiindex.criterion.Expression;
@@ -51,6 +53,8 @@ import cz.kamosh.multiindex.impl.Junction.Disjunction;
 import cz.kamosh.multiindex.interf.IMultiIndexContainer;
 import cz.kamosh.multiindex.interf.IMultiIndexed;
 import cz.kamosh.multiindex.utils.NullKeyMap;
+import cz.kamosh.parallel.Parallel;
+import cz.kamosh.parallel.Parallel.Operation;
 
 /**
  * Abstract class as support for all implementations of MultiIndexContainer.
@@ -73,6 +77,9 @@ public abstract class MultiIndexContainer<E extends IMultiIndexed<K>, K extends 
 	final static private Logger logger = Logger
 			.getLogger(MultiIndexContainer.class.getName());
 
+	// General settings for this instance of multiindex
+	private MultiIndexSetting setting = MultiIndexSetting.getInstance();
+	
 	private Map<L, DataGetter> cachedDataGetters;;
 
 	protected final Collection<E> EMPTY_RESULT = Collections.<E> emptySet();
@@ -81,7 +88,7 @@ public abstract class MultiIndexContainer<E extends IMultiIndexed<K>, K extends 
 	 * Object used as locking object used for synchronization. Each new read
 	 * lock increments lock for 1. Each end of usage of read lock decrease lock
 	 * for 1. Write lock is expressed by value -1 and could be set only if there
-	 * is not any perting
+	 * is not any pending operation
 	 */
 	private static class Lock {
 		int counter = 0;
@@ -103,7 +110,7 @@ public abstract class MultiIndexContainer<E extends IMultiIndexed<K>, K extends 
 	protected Map<K, E> data;
 
 	/**
-	 * Could be indexed column values changed
+	 * Could be indexed column values changed?
 	 */
 	protected boolean indexedAttributeCanChange;
 
@@ -200,35 +207,61 @@ public abstract class MultiIndexContainer<E extends IMultiIndexed<K>, K extends 
 	// methods==================================== //
 
 	protected void recalculateIndexes() {
-		for (Map.Entry<L, NavigableMap<Object, Collection<E>>> index : indexes
-				.entrySet()) {
-			recalculateIndex(index.getKey(), index.getValue());
+		if (getSetting().isUseParalellization()) {
+			Parallel.Operation<Entry<L, NavigableMap<Object, Collection<E>>>> operationRecalculateIndex = new Parallel.Operation<Entry<L, NavigableMap<Object, Collection<E>>>>() {
+				@Override
+				public void perform(
+						Entry<L, NavigableMap<Object, Collection<E>>> index) {
+					recalculateIndex(index.getKey(), index.getValue());					
+				}
+			};
+			Iterable<Entry<L, NavigableMap<Object, Collection<E>>>> entrySet = indexes.entrySet();
+			Parallel.For(entrySet, operationRecalculateIndex);
+		} else {
+			for (Map.Entry<L, NavigableMap<Object, Collection<E>>> index : indexes.entrySet()) {
+				recalculateIndex(index.getKey(), index.getValue());
+			}
 		}
 	}
-
-	public void addIndex(L... index) {
+	// TODO add possibility to add all known indexes for data object
+	public void addIndex(final L... index) {
 		// Do nothing if none index specified
 		if (index == null || index.length == 0) {
 			return;
 		}
 
+		// Use only unique indexes. Treat situation that somebody used index twice
+		final Set<L> indexesToApply = new HashSet<L>(index.length);
+		indexesToApply.addAll(Arrays.asList(index));
+		
 		acquireWriteLock();
 		try {
-			for (L ind : index) {
-				NavigableMap<Object, Collection<E>> indexedData;
-				// If index already exists, do not create it again
-				if ((indexedData = indexes.get(ind)) == null) {
-					// Check whether it is possible to get data getter for index
-					// If not, exception is thrown
-					DataGetter dataGetter = getCachedDataGetter(ind);
+			final Operation<L> operation = new Parallel.Operation<L>() {
+				public void perform(L ind) {
+					System.out.printf("Operation being done in thread %1$d\n", Thread.currentThread().getId());
+					NavigableMap<Object, Collection<E>> indexedData;
+					// If index already exists, do not create it again
+					if ((indexedData = indexes.get(ind)) == null) {
+						// Check whether it is possible to get data getter for index
+						// If not, exception is thrown
+						DataGetter dataGetter = getCachedDataGetter(ind);
 
-					// Create new indexed values map
-					indexedData = new NullKeyMap<Object, Collection<E>>(
-							new TreeMap<Object, Collection<E>>(
-									NullKeyMap.nullLowOrder()));
-					indexes.put(ind, indexedData);
-					// If there is already any data, lets index them
-					recalculateIndex(dataGetter, indexedData);
+						// Create new indexed values map
+						indexedData = new NullKeyMap<Object, Collection<E>>(
+								new TreeMap<Object, Collection<E>>(
+										NullKeyMap.nullLowOrder()));
+						indexes.put(ind, indexedData);
+						// If there is already any data, lets index them
+						recalculateIndex(dataGetter, indexedData);
+					}	
+				};
+			};
+			
+			if(getSetting().isUseParalellization()) {
+				Parallel.For(indexesToApply, operation);
+			} else {
+				for(L ind : indexesToApply) {
+					operation.perform(ind);
 				}
 			}
 		} finally {
@@ -536,15 +569,15 @@ public abstract class MultiIndexContainer<E extends IMultiIndexed<K>, K extends 
 					+ lookupRule.getIndex() + " not established");
 		}
 
-		// Note: There is used HashSet List implementation due to frequent usage
+		// Note: There is used HashSet implementation due to frequent usage
 		// of methods retainAll on result set.
 		Collection<E> recordInstances = new HashSet<E>();
 
 		// Attempt to solve ClassCastException if bad indexedValueFrom or
-		// indexedValueTo has been passsed
+		// indexedValueTo has been passed
 		try {
 			switch (lookupRule.getOperator()) {
-			// NOTE: For all callings of method
+			// NOTE: For all calls of method
 			// AbstractCollection.retainAll(Collection<?> c)
 			// are parameter values wrapped into HashSet, because there is
 			// called method
@@ -649,13 +682,13 @@ public abstract class MultiIndexContainer<E extends IMultiIndexed<K>, K extends 
 
 	private void recalculateIndex(final DataGetter dataGetter,
 			NavigableMap<Object, Collection<E>> indexedData) {
+		System.out.println("Recalculating index " + dataGetter.toString() + " start");
 		// Remove multimap for index, indexed data values could be outdated
 		indexedData.clear();
 
 		// Loop over all values in data and index all their values on specified
 		// attribute
 		try {
-			// int i = 0;
 			for (Map.Entry<K, E> entry : data.entrySet()) {
 				// Get indexed field value
 				Object indexedValue = dataGetter.getData(entry.getValue());
@@ -667,11 +700,11 @@ public abstract class MultiIndexContainer<E extends IMultiIndexed<K>, K extends 
 				}
 				// Add record to be indexed by particular value
 				recordInstances.add((E) entry.getValue());
-				// logger.info(""+i++);
 			}
 		} catch (Exception e) {
 			throw new UnsupportedOperationException(e);
 		}
+		System.out.println("Recalculating index " + dataGetter.toString() + " end");
 	}
 
 	private void recalculateIndex(final L index,
@@ -699,4 +732,24 @@ public abstract class MultiIndexContainer<E extends IMultiIndexed<K>, K extends 
 		return canBeNull == null ? defaultValue : canBeNull;
 	}
 
+	public final MultiIndexSetting getSetting() {
+		return MultiIndexSetting.getInstance();
+	}
+
+
+    @Override
+    public int getCountOfIndexedValues(ICriterion<E, K, L> criterion) {
+    	// We should be able to find indexed data for Expressions
+    	// For other implementations of ICriterions we return min integer.
+    	if(criterion instanceof Expression) {
+    		// Get index from expression as it is used as key into indexes
+    		L index = (L) ((Expression)criterion).getIndex();
+    		NavigableMap<Object, Collection<E>> indexedValues = indexes.get(index);
+        	assert indexedValues != null : "Strange, if we know index, data should be also indexed using this";
+    		if(indexedValues != null) {
+        		return indexedValues.keySet().size();
+        	}    		
+    	}
+    	return Integer.MIN_VALUE;    	
+    }
 }
