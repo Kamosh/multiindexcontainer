@@ -29,6 +29,14 @@
  */
 package cz.kamosh.multiindex.impl;
 
+
+/**
+ * Singleton class which holds settings for multiindex behavior.
+ * To enable/disable multicore behavior, use {@link #setUseParalellization(boolean)}.
+ * 
+ * @author fekete
+ *
+ */
 public final class MultiIndexSetting {
 
 	private MultiIndexSetting() {};
@@ -41,10 +49,17 @@ public final class MultiIndexSetting {
 	
 	private boolean useParalellization = true;
 
+	/**
+	 * @return Should be used multithreading on multicore computers?
+	 */
 	public boolean isUseParalellization() {
 		return useParalellization;
 	}
 
+	/**
+	 * Should be used multithreading on multicore computers?
+	 * @param useParalellization  Use multithreading?
+	 */
 	public void setUseParalellization(boolean useParalellization) {
 		this.useParalellization = useParalellization;
 	}

@@ -1,9 +1,6 @@
 /*
  *  Main authors:
  *     Fekete Kamosh <fekete.kamosh@gmail.com> 
- * 
- *  Copyright:
- *     Fekete Kamosh, 2010 
  *     
  *  Last modified:
  *     $Date$ by $Author$
