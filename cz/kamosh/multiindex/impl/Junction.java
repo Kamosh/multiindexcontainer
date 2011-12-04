@@ -1,9 +1,6 @@
 /*
  *  Main authors:
  *     Fekete Kamosh <fekete.kamosh@gmail.com> 
- * 
- *  Copyright:
- *     Fekete Kamosh, 2010 
  *     
  *  Last modified:
  *     $Date$ by $Author$
@@ -31,14 +28,19 @@
  */
 package cz.kamosh.multiindex.impl;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
+
+import com.sun.org.apache.bcel.internal.generic.GETSTATIC;
 
 import cz.kamosh.multiindex.criterion.ICriterion;
 import cz.kamosh.multiindex.interf.IMultiIndexContainer;
 import cz.kamosh.multiindex.interf.IMultiIndexed;
+import cz.kamosh.parallel.Parallel;
 
 /**
  * Class to allow logical operators AND and OR
@@ -76,13 +78,27 @@ public abstract class Junction<E extends IMultiIndexed<K>, K extends Object, L>
 	public static class Conjunction<E extends IMultiIndexed<K>, K extends Object, L>
 			extends Junction<E, K, L> {
 		@Override
-		public Collection<E> getRecordInstances(IMultiIndexContainer container) {
+		public Collection<E> getRecordInstances(final IMultiIndexContainer container) {
 			Collection<E> result = Collections.<E> emptySet(); // Only to assure
 																// local
 																// initialization
+			// Optimization - applying criterions start from those which
+			// have likely least records for one indexed value!
+			// TODO Try to think out how to have sorted criterions automatically
+			List<ICriterion<E, K, L>> tempCriterions = new ArrayList<ICriterion<E, K, L>>();
+			tempCriterions.addAll(children);
+			Collections.sort(tempCriterions,
+					new java.util.Comparator<ICriterion<E, K, L>>() {
+						@Override
+						public int compare(ICriterion<E, K, L> o1,
+								ICriterion<E, K, L> o2) {
+							return container.getCountOfIndexedValues(o1) - container.getCountOfIndexedValues(o2);
+						}
+					});
+
 			// Loop over all children and perform retain all among all
 			boolean firstPassed = false;
-			for (ICriterion<E, K, L> criterion : children) {
+			for (ICriterion<E, K, L> criterion : tempCriterions) {
 				if (!firstPassed) {
 					result = criterion.getRecordInstances(container);
 					firstPassed = true;
@@ -107,13 +123,27 @@ public abstract class Junction<E extends IMultiIndexed<K>, K extends Object, L>
 	public static class Disjunction<E extends IMultiIndexed<K>, K extends Object, L>
 			extends Junction<E, K, L> {
 		@Override
-		public Collection<E> getRecordInstances(IMultiIndexContainer container) {
-			Collection<E> result = new HashSet<E>(); // Only to assure local
-														// initialization
-			// Loop over all children and perform retain all among all
-			for (ICriterion<E, K, L> criterion : children) {
-				// OR operator applied
-				result.addAll(criterion.getRecordInstances(container));
+		public Collection<E> getRecordInstances(
+				final IMultiIndexContainer container) {
+			final Collection<E> result = new HashSet<E>(); // Only to assure
+															// local
+															// initialization
+			// Loop over all children and add all records fulfilling criterion
+			if (MultiIndexSetting.getInstance().isUseParalellization()) {
+				Parallel.For(children,
+						new Parallel.Operation<ICriterion<E, K, L>>() {
+							@Override
+							public void perform(ICriterion<E, K, L> criterion) {
+								result.addAll(criterion
+										.getRecordInstances(container));
+
+							}
+						});
+			} else {
+				for (ICriterion<E, K, L> criterion : children) {
+					// OR operator applied
+					result.addAll(criterion.getRecordInstances(container));
+				}
 			}
 			return result;
 		}

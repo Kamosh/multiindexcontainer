@@ -2,8 +2,6 @@
  *  Main authors:
  *     Fekete Kamosh <fekete.kamosh@gmail.com> 
  * 
- *  Copyright:
- *     LOGIS a.s., 2008 - 2010 
  *     
  *  Last modified:
  *     $Date$ by $Author$
@@ -29,23 +27,41 @@
  *  WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  *
  */
-package cz.kamosh.multiindex.interf;
-
+package cz.kamosh.multiindex.impl;
 
 
 /**
- * Interface to express template for all indexes that might be used in {@link cz.kamosh.multiindex.impl.MultiIndexContainerEnum}
- * @param <T>Type of record to be indexed
+ * Singleton class which holds settings for multiindex behavior.
+ * To enable/disable multicore behavior, use {@link #setUseParalellization(boolean)}.
+ * 
+ * @author fekete
+ *
  */
-public interface Indexable<T extends IMultiIndexed> {
+public final class MultiIndexSetting {
+
+	private MultiIndexSetting() {};
+	
+	static MultiIndexSetting instance = new MultiIndexSetting();
+	
+	public static MultiIndexSetting getInstance() {
+		return instance;
+	}
+	
+	private boolean useParalellization = true;
 
 	/**
-	 * Returns indexed value of specified record.
-	 * Returned data should implement interface {@link Comparable} as they are 
-	 * put into {@link java.util.NavigableMap} 
-	 * @param record What record to use to get indexed data?
-	 * @return Value of indexed data
+	 * @return Should be used multithreading on multicore computers?
 	 */
-    Object getIndexedValue(T record);    
-      
+	public boolean isUseParalellization() {
+		return useParalellization;
+	}
+
+	/**
+	 * Should be used multithreading on multicore computers?
+	 * @param useParalellization  Use multithreading?
+	 */
+	public void setUseParalellization(boolean useParalellization) {
+		this.useParalellization = useParalellization;
+	}
+		
 }

@@ -55,7 +55,7 @@ public class MultiIndexContainerEnum<E extends IMultiIndexed<K>, K extends Objec
 		extends MultiIndexContainer<E, K, Indexable<E>> implements
 		IMultiIndexContainerEnum<E, K> {
 
-	private static final Logger logger = Logger
+	private static final Logger LOGGER = Logger
 			.getLogger(MultiIndexContainerEnum.class.getName());
 
 	/**

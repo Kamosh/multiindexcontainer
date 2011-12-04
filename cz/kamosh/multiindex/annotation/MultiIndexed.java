@@ -1,9 +1,7 @@
 /*
  *  Main authors:
- *     Fekete Kamosh <fekete.kamosh@gmail.com> 
- * 
- *  Copyright:
- *     LOGIS a.s., 2008 - 2010 
+ *     Fekete Kamosh  <fekete.kamosh@gmail.com>
+ *
  *     
  *  Last modified:
  *     $Date$ by $Author$
@@ -28,31 +26,29 @@
  *  OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
  *  WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  *
- */
+ */ 
 
-package cz.kamosh.multiindex.test;
+package cz.kamosh.multiindex.annotation;
 
+import cz.kamosh.multiindex.interf.IMultiIndexContainerEnum;
+import cz.kamosh.multiindex.interf.IMultiIndexed;
 import cz.kamosh.multiindex.interf.Indexable;
 
 /**
- * Indexes established for Person class
+ * Annotation to mark getters of data classes for which 
+ * should be created enum constants.
+ * Each of constant will implement interface {@link Indexable}
+ * so that it could be used in {@link IMultiIndexContainerEnum}
+ * 
+ * Annotated getter must be non parametrized getter of data class. 
+ * Data class hosting annotated attributes must either
+ * <br>implement interface {@link IMultiIndexed}
+ * or
+ * <br>has one getter method annotated with // TODO
+ * 
  */
-public enum PersonTest_Indexes implements Indexable<Person> {
-
-	BIRTH_YEAR {
-		public Integer getIndexedValue(Person record) {
-			return record.getBirthYear();
-		}
-	},
-	SEX {
-		public Boolean getIndexedValue(Person record) {
-			return record.isMan();
-		}
-	},
-	SURNAME {
-		public String getIndexedValue(Person record) {
-			return record.getSurname();
-		}
-	},
-
+@java.lang.annotation.Target(value = {java.lang.annotation.ElementType.TYPE, java.lang.annotation.ElementType.METHOD})
+@java.lang.annotation.Retention(value = java.lang.annotation.RetentionPolicy.RUNTIME)
+public @interface MultiIndexed {
+	
 }

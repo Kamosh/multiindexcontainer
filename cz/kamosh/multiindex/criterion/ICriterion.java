@@ -3,7 +3,7 @@
  *     Fekete Kamosh <fekete.kamosh@gmail.com> 
  * 
  *  Copyright:
- *     Fekete Kamosh, 2010 
+ *     LOGIS a.s., 2008 - 2010 
  *     
  *  Last modified:
  *     $Date$ by $Author$
@@ -28,27 +28,37 @@
  *  OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
  *  WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  *
- */ 
+ */
 
-package cz.kamosh.multiindex.test;
+package cz.kamosh.multiindex.criterion;
 
-import java.util.Date;
+import java.util.Collection;
+
+import cz.kamosh.multiindex.interf.IMultiIndexContainer;
+import cz.kamosh.multiindex.interf.IMultiIndexed;
 
 /**
- * Helper class to measure elapsed time
+ * General criterion used to specify conditions how to find records in container
+ * <p/>
+ * Parameters used to preserve link proper criterion to proper container
+ * 
+ * @param <E>
+ *            Record type in container
+ * @param <K>
+ *            Key type of record
+ * @param <L>
+ *            Type of index used for container. Now there is possibility to use
+ *            <code>String</code> or <code>Indexable</code>
  */
-public class TimeElapser {
-	private Date start;
+public interface ICriterion<E extends IMultiIndexed<K>, K extends Object, L> {
 
-	public TimeElapser() {
-		start = new Date();
-	}
-
-	public void start() {
-		start = new Date();
-	}
-
-	public long end() {
-		return new Date().getTime() - start.getTime();
-	}
+	/**
+	 * Method to find records resulting from all <code>lookupRules</code> in
+	 * parameter
+	 * 
+	 * @param What
+	 *            container to use get values?
+	 */
+	public Collection<E> getRecordInstances(
+			IMultiIndexContainer<E, K, L> container);	
 }
