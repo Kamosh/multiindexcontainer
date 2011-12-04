@@ -3,7 +3,7 @@
  *     Fekete Kamosh <fekete.kamosh@gmail.com> 
  * 
  *  Copyright:
- *     LOGIS a.s., 2008 - 2010 
+ *     LOGIS a.s., 2008 - 2011 
  *     
  *  Last modified:
  *     $Date$ by $Author$
