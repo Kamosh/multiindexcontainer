@@ -40,7 +40,6 @@ import com.sun.org.apache.bcel.internal.generic.GETSTATIC;
 import cz.kamosh.multiindex.criterion.ICriterion;
 import cz.kamosh.multiindex.interf.IMultiIndexContainer;
 import cz.kamosh.multiindex.interf.IMultiIndexed;
-import cz.kamosh.parallel.Parallel;
 
 /**
  * Class to allow logical operators AND and OR
@@ -136,7 +135,6 @@ public abstract class Junction<E extends IMultiIndexed<K>, K extends Object, L>
 							public void perform(ICriterion<E, K, L> criterion) {
 								result.addAll(criterion
 										.getRecordInstances(container));
-
 							}
 						});
 			} else {

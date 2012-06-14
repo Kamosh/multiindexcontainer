@@ -3,7 +3,7 @@
  *     Fekete Kamosh <fekete.kamosh@gmail.com> 
  * 
  *  Copyright:
- *     LOGIS a.s., 2008 - 2011 
+ *     LOGIS a.s., 2008 - 2012 
  *     
  *  Last modified:
  *     $Date$ by $Author$
@@ -50,11 +50,10 @@ import cz.kamosh.multiindex.criterion.Expression;
 import cz.kamosh.multiindex.criterion.ICriterion;
 import cz.kamosh.multiindex.impl.Junction.Conjunction;
 import cz.kamosh.multiindex.impl.Junction.Disjunction;
+import cz.kamosh.multiindex.impl.Parallel.Operation;
 import cz.kamosh.multiindex.interf.IMultiIndexContainer;
 import cz.kamosh.multiindex.interf.IMultiIndexed;
 import cz.kamosh.multiindex.utils.NullKeyMap;
-import cz.kamosh.parallel.Parallel;
-import cz.kamosh.parallel.Parallel.Operation;
 
 /**
  * Abstract class as support for all implementations of MultiIndexContainer.
@@ -212,7 +211,7 @@ public abstract class MultiIndexContainer<E extends IMultiIndexed<K>, K extends 
 				@Override
 				public void perform(
 						Entry<L, NavigableMap<Object, Collection<E>>> index) {
-					recalculateIndex(index.getKey(), index.getValue());					
+					recalculateIndex(index.getKey(), index.getValue());								
 				}
 			};
 			Iterable<Entry<L, NavigableMap<Object, Collection<E>>>> entrySet = indexes.entrySet();
